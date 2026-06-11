@@ -1,107 +1,177 @@
-// app.js
-const tg = window.Telegram.WebApp;
+const tg = Telegram.WebApp;
 tg.expand();
 
-const screens = document.querySelectorAll(".screen");
-document.querySelectorAll(".navbar button").forEach(b=>{
-  b.onclick=()=>navigate(b.dataset.nav);
-});
+// ===== USER =====
+const user = tg.initDataUnsafe?.user || {};
+document.getElementById("username").textContent = user.username || "Player";
+document.getElementById("avatar").src =
+  user.photo_url || "https://via.placeholder.com/64";
 
-function navigate(id){
-  screens.forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-let balance = 10000;
+// ===== STATE =====
+let balance = 100;
 let inventory = [];
 let cooldown = false;
 
-const ITEMS = [
-  { id:1, name:"Stone", price:50, img:"assets/stone.png", chance:60 },
-  { id:2, name:"Crystal", price:200, img:"assets/crystal.png", chance:30 },
-  { id:3, name:"Relic", price:1000, img:"assets/relic.png", chance:9 },
-  { id:4, name:"Artifact", price:5000, img:"assets/artifact.png", chance:1 }
+const STORAGE_KEY = "miniapp_save_v1";
+
+// ===== ITEMS =====
+const items = [
+  { id: 1, name: "Ракета", price: 50, chance: 1.4 },
+  { id: 2, name: "Мишка", price: 15, chance: 10 },
+  { id: 3, name: "Сердце", price: 15, chance: 10 },
+  { id: 4, name: "Роза", price: 25, chance: 34 },
+  { id: 5, name: "Подарок", price: 25, chance: 34 }
 ];
 
-const caseItemsBox = document.getElementById("case-items");
-ITEMS.forEach(i=>{
-  const d=document.createElement("div");
-  d.className="preview-item";
-  d.innerHTML=`<img src="${i.img}"><small>${i.name}</small>`;
-  caseItemsBox.appendChild(d);
+const view = document.getElementById("view");
+const balanceEl = document.getElementById("balance");
+
+// ===== SAVE / LOAD =====
+function saveState() {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ balance, inventory })
+  );
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    balance = data.balance ?? balance;
+    inventory = data.inventory ?? inventory;
+  } catch {}
+}
+
+// ===== UI =====
+function updateBalance() {
+  balanceEl.textContent = balance;
+}
+
+// ===== RANDOM =====
+function weightedRandom() {
+  const pool = [];
+  items.forEach(i => {
+    for (let x = 0; x < i.chance * 10; x++) pool.push(i);
+  });
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ===== CASES =====
+function renderCases() {
+  view.innerHTML = `
+    <div class="case">
+      <div class="roller" id="roller">
+        ${items.map(i => `<div class="item">${i.name}</div>`).join("")}
+      </div>
+      <button class="btn" id="spin">Открыть кейс · 25 💎</button>
+    </div>
+
+    <h3>Возможные призы</h3>
+    ${items.map(i =>
+      `<div class="card">${i.name} — ${i.price} 💎 · ${i.chance}%</div>`
+    ).join("")}
+  `;
+  document.getElementById("spin").onclick = spin;
+}
+
+function spin() {
+  if (cooldown || balance < 25) return;
+  cooldown = true;
+  balance -= 25;
+  updateBalance();
+  saveState();
+
+  const win = weightedRandom();
+  const index = items.findIndex(i => i.id === win.id);
+  const roller = document.getElementById("roller");
+
+  roller.style.transition = "transform 4s cubic-bezier(.1,.8,.2,1)";
+  roller.style.transform = `translateX(-${index * 130}px)`;
+
+  setTimeout(() => {
+    inventory.push(win);
+    saveState();
+    tg.showAlert(`Вы выиграли: ${win.name}`);
+    cooldown = false;
+  }, 4200);
+}
+
+// ===== INVENTORY =====
+function renderInventory() {
+  view.innerHTML = inventory.length === 0
+    ? `<div class="card">Инвентарь пуст</div>`
+    : inventory.map((i, idx) => `
+      <div class="card">
+        ${i.name} — ${i.price} 💎
+        <button class="btn" onclick="sell(${idx})">Продать</button>
+      </div>
+    `).join("");
+}
+
+function sell(index) {
+  balance += inventory[index].price;
+  inventory.splice(index, 1);
+  updateBalance();
+  saveState();
+  renderInventory();
+}
+
+// ===== GAMES =====
+function renderGames() {
+  view.innerHTML = `
+    <div class="card">
+      <h3>Риск ×2</h3>
+      <button class="btn" onclick="risk()">Поставить 10 💎</button>
+    </div>
+  `;
+}
+
+function risk() {
+  if (balance < 10) return;
+  balance -= 10;
+
+  if (Math.random() > 0.5) {
+    balance += 20;
+    tg.showAlert("Вы выиграли!");
+  } else {
+    tg.showAlert("Вы проиграли");
+  }
+
+  updateBalance();
+  saveState();
+}
+
+// ===== PROFILE =====
+function renderProfile() {
+  view.innerHTML = `
+    <div class="card">
+      <h3>${user.username || "Player"}</h3>
+      <p>Баланс: ${balance} 💎</p>
+    </div>
+    <div class="card">
+      <h4>Реферальная ссылка</h4>
+      <input value="https://t.me/yourbot?start=${user.id}" readonly>
+    </div>
+  `;
+}
+
+// ===== NAV =====
+document.querySelectorAll(".bottom button").forEach(btn => {
+  btn.onclick = () => {
+    const tab = btn.dataset.tab;
+    if (tab === "cases") renderCases();
+    if (tab === "inventory") renderInventory();
+    if (tab === "games") renderGames();
+    if (tab === "profile") renderProfile();
+  };
 });
 
-function roll(){
-  let r=Math.random()*100,sum=0;
-  for(const i of ITEMS){ sum+=i.chance; if(r<=sum) return i; }
-}
+// ===== INIT =====
+loadState();
+updateBalance();
+renderCases();
 
-const roulette=document.getElementById("roulette");
-const spinBtn=document.getElementById("spin");
-const cooldownBox=document.getElementById("cooldown");
-
-spinBtn.onclick=()=>{
-  if(cooldown||balance<100) return;
-  cooldown=true;
-  balance-=100;
-  updateBalance();
-  cooldownBox.textContent="Открытие...";
-  roulette.innerHTML="";
-  const win=roll();
-  const list=[];
-  for(let i=0;i<40;i++) list.push(roll());
-  list[30]=win;
-  list.forEach(it=>{
-    const el=document.createElement("div");
-    el.className="item";
-    el.innerHTML=`<img src="${it.img}" width="48"><small>${it.name}</small>`;
-    roulette.appendChild(el);
-  });
-  roulette.style.transition="none";
-  roulette.style.transform="translateX(0)";
-  requestAnimationFrame(()=>{
-    roulette.style.transition="transform 4s cubic-bezier(.08,.6,0,1)";
-    roulette.style.transform="translateX(-2800px)";
-  });
-  setTimeout(()=>{
-    inventory.push(win);
-    renderInventory();
-    cooldownBox.textContent="";
-    cooldown=false;
-  },4200);
-};
-
-function renderInventory(){
-  const box=document.getElementById("inventory");
-  box.innerHTML="";
-  inventory.forEach(i=>{
-    const d=document.createElement("div");
-    d.className="inventory-item";
-    d.innerHTML=`<img src="${i.img}"><small>${i.name}<br>${i.price}🪙</small>`;
-    box.appendChild(d);
-  });
-}
-
-document.getElementById("coinflip").onclick=()=>{
-  if(!inventory.length) return;
-  const item=inventory.pop();
-  if(Math.random()>0.5){
-    item.price*=2;
-    inventory.push(item);
-    document.getElementById("minigame-result").textContent="Победа!";
-  }else{
-    document.getElementById("minigame-result").textContent="Проигрыш!";
-  }
-  renderInventory();
-};
-
-function updateBalance(){
-  document.getElementById("balance").textContent=balance;
-}
-
-const user=tg.initDataUnsafe?.user;
-if(user){
-  document.getElementById("username").textContent=user.username||user.first_name;
-  document.getElementById("avatar").src=user.photo_url||"assets/avatar.png";
-  document.getElementById("ref").value=`https://t.me/yourbot?start=${user.id}`;
-}  
+window.addEventListener("beforeunload", saveState);
+tg.onEvent("viewportChanged", saveState);
