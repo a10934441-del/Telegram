@@ -1,71 +1,38 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>CASEVERSE</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mini App</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
+
 <div id="app">
-  <header class="topbar">
-    <div class="logo">CASEVERSE</div>
-    <div class="balance">🪙 <span id="balance">10000</span></div>
+
+  <header class="top">
+    <div class="user">
+      <img id="avatar">
+      <div>
+        <div id="username">Player</div>
+        <div class="lvl">Ур. 1</div>
+      </div>
+    </div>
+    <div class="balance"><span id="balance">0</span> 💎</div>
   </header>
 
-  <main class="screen active" id="screen-cases">
-    <section class="cases-grid">
-      <div class="case-card" data-case="classic">
-        <img class="case-img" src="assets/case.png" />
-        <div class="case-info">
-          <h3>Classic Case</h3>
-          <span class="price">100 🪙</span>
-        </div>
-      </div>
-    </section>
+  <main id="view"></main>
 
-    <section class="case-contains">
-      <h4>Содержимое кейса</h4>
-      <div id="case-items" class="items-preview"></div>
-    </section>
-  </main>
-
-  <main class="screen" id="screen-open">
-    <div class="roulette-wrapper">
-      <div class="pointer"></div>
-      <div id="roulette" class="roulette"></div>
-    </div>
-    <button id="spin">ОТКРЫТЬ</button>
-    <div id="cooldown"></div>
-    <div id="result"></div>
-  </main>
-
-  <main class="screen" id="screen-minigames">
-    <h2>Мини-игры</h2>
-    <button id="coinflip">🎲 Coinflip</button>
-    <div id="minigame-result"></div>
-  </main>
-
-  <main class="screen" id="screen-profile">
-    <div class="profile">
-      <img id="avatar" class="avatar" />
-      <h3 id="username"></h3>
-      <p>Реферальная ссылка:</p>
-      <input id="ref" readonly />
-    </div>
-    <h4>Инвентарь</h4>
-    <div id="inventory" class="inventory-grid"></div>
-  </main>
-
-  <nav class="navbar">
-    <button data-nav="screen-cases">Кейсы</button>
-    <button data-nav="screen-minigames">Игры</button>
-    <button data-nav="screen-profile">Профиль</button>
+  <nav class="bottom">
+    <button data-tab="cases">🎰<span>Кейсы</span></button>
+    <button data-tab="inventory">🎒<span>Инвентарь</span></button>
+    <button data-tab="games">🎮<span>Игры</span></button>
+    <button data-tab="profile">👤<span>Профиль</span></button>
   </nav>
+
 </div>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
