@@ -8,56 +8,64 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app">
-    <header class="topbar">
-      <div class="logo">CASEVERSE</div>
-      <div class="balance">💎 <span id="balance">10 000</span></div>
-    </header>
+<div id="app">
+  <header class="topbar">
+    <div class="logo">CASEVERSE</div>
+    <div class="balance">🪙 <span id="balance">10000</span></div>
+  </header>
 
-    <main class="screen active" id="screen-cases">
-      <section class="hero">
-        <h1>Открывай кейсы</h1>
-        <p>Редкие предметы. Чистый стиль. CS2-вдохновение.</p>
-      </section>
-
-      <section class="cases-grid">
-        <div class="case-card" data-case="classic">
-          <div class="case-img"></div>
-          <div class="case-info">
-            <h3>Classic Case</h3>
-            <span class="price">100 💎</span>
-          </div>
+  <main class="screen active" id="screen-cases">
+    <section class="cases-grid">
+      <div class="case-card" data-case="classic">
+        <img class="case-img" src="assets/case.png" />
+        <div class="case-info">
+          <h3>Classic Case</h3>
+          <span class="price">100 🪙</span>
         </div>
-        <div class="case-card premium" data-case="premium">
-          <div class="case-img"></div>
-          <div class="case-info">
-            <h3>Premium Case</h3>
-            <span class="price">500 💎</span>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <main class="screen" id="screen-open">
-      <div class="roulette-wrapper">
-        <div class="pointer"></div>
-        <div id="roulette" class="roulette"></div>
       </div>
-      <button id="spin">ОТКРЫТЬ</button>
-      <div id="result"></div>
-    </main>
+    </section>
 
-    <main class="screen" id="screen-inventory">
-      <h2>Инвентарь</h2>
-      <div id="inventory" class="inventory-grid"></div>
-    </main>
+    <section class="case-contains">
+      <h4>Содержимое кейса</h4>
+      <div id="case-items" class="items-preview"></div>
+    </section>
+  </main>
 
-    <nav class="navbar">
-      <button data-nav="screen-cases">Кейсы</button>
-      <button data-nav="screen-inventory">Инвентарь</button>
-    </nav>
-  </div>
+  <main class="screen" id="screen-open">
+    <div class="roulette-wrapper">
+      <div class="pointer"></div>
+      <div id="roulette" class="roulette"></div>
+    </div>
+    <button id="spin">ОТКРЫТЬ</button>
+    <div id="cooldown"></div>
+    <div id="result"></div>
+  </main>
 
-  <script src="app.js"></script>
+  <main class="screen" id="screen-minigames">
+    <h2>Мини-игры</h2>
+    <button id="coinflip">🎲 Coinflip</button>
+    <div id="minigame-result"></div>
+  </main>
+
+  <main class="screen" id="screen-profile">
+    <div class="profile">
+      <img id="avatar" class="avatar" />
+      <h3 id="username"></h3>
+      <p>Реферальная ссылка:</p>
+      <input id="ref" readonly />
+    </div>
+    <h4>Инвентарь</h4>
+    <div id="inventory" class="inventory-grid"></div>
+  </main>
+
+  <nav class="navbar">
+    <button data-nav="screen-cases">Кейсы</button>
+    <button data-nav="screen-minigames">Игры</button>
+    <button data-nav="screen-profile">Профиль</button>
+  </nav>
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
