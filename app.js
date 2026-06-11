@@ -1,98 +1,107 @@
 // app.js
+const tg = window.Telegram.WebApp;
+tg.expand();
+
 const screens = document.querySelectorAll(".screen");
-const navButtons = document.querySelectorAll(".navbar button");
+document.querySelectorAll(".navbar button").forEach(b=>{
+  b.onclick=()=>navigate(b.dataset.nav);
+});
 
-const roulette = document.getElementById("roulette");
-const resultBox = document.getElementById("result");
-const inventoryBox = document.getElementById("inventory");
-const balanceEl = document.getElementById("balance");
-
-let balance = 10000;
-let inventory = [];
-
-const ITEMS = [
-  { name: "Common", rarity: "common", chance: 70 },
-  { name: "Rare", rarity: "rare", chance: 20 },
-  { name: "Epic", rarity: "epic", chance: 7 },
-  { name: "Legendary", rarity: "legendary", chance: 2.5 },
-  { name: "Knife", rarity: "knife", chance: 0.5 }
-];
-
-function navigate(id) {
-  screens.forEach(s => s.classList.remove("active"));
+function navigate(id){
+  screens.forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
 
-navButtons.forEach(btn => {
-  btn.onclick = () => navigate(btn.dataset.nav);
+let balance = 10000;
+let inventory = [];
+let cooldown = false;
+
+const ITEMS = [
+  { id:1, name:"Stone", price:50, img:"assets/stone.png", chance:60 },
+  { id:2, name:"Crystal", price:200, img:"assets/crystal.png", chance:30 },
+  { id:3, name:"Relic", price:1000, img:"assets/relic.png", chance:9 },
+  { id:4, name:"Artifact", price:5000, img:"assets/artifact.png", chance:1 }
+];
+
+const caseItemsBox = document.getElementById("case-items");
+ITEMS.forEach(i=>{
+  const d=document.createElement("div");
+  d.className="preview-item";
+  d.innerHTML=`<img src="${i.img}"><small>${i.name}</small>`;
+  caseItemsBox.appendChild(d);
 });
 
-document.querySelectorAll(".case-card").forEach(card => {
-  card.onclick = () => navigate("screen-open");
-});
-
-function rollItem() {
-  let roll = Math.random() * 100;
-  let sum = 0;
-  for (const item of ITEMS) {
-    sum += item.chance;
-    if (roll <= sum) return item;
-  }
+function roll(){
+  let r=Math.random()*100,sum=0;
+  for(const i of ITEMS){ sum+=i.chance; if(r<=sum) return i; }
 }
 
-function buildRoulette(winItem) {
-  roulette.innerHTML = "";
-  const list = [];
-  for (let i = 0; i < 45; i++) list.push(rollItem());
-  const winIndex = 32;
-  list[winIndex] = winItem;
+const roulette=document.getElementById("roulette");
+const spinBtn=document.getElementById("spin");
+const cooldownBox=document.getElementById("cooldown");
 
-  list.forEach(i => {
-    const el = document.createElement("div");
-    el.className = `item ${i.rarity}`;
-    el.textContent = i.name;
+spinBtn.onclick=()=>{
+  if(cooldown||balance<100) return;
+  cooldown=true;
+  balance-=100;
+  updateBalance();
+  cooldownBox.textContent="Открытие...";
+  roulette.innerHTML="";
+  const win=roll();
+  const list=[];
+  for(let i=0;i<40;i++) list.push(roll());
+  list[30]=win;
+  list.forEach(it=>{
+    const el=document.createElement("div");
+    el.className="item";
+    el.innerHTML=`<img src="${it.img}" width="48"><small>${it.name}</small>`;
     roulette.appendChild(el);
   });
-
-  return winIndex;
-}
-
-document.getElementById("spin").onclick = () => {
-  if (balance < 100) return;
-  balance -= 100;
-  balanceEl.textContent = balance.toLocaleString();
-
-  resultBox.textContent = "";
-  const winItem = rollItem();
-  const index = buildRoulette(winItem);
-
-  const itemWidth = 96;
-  const center =
-    roulette.parentElement.offsetWidth / 2 - itemWidth / 2;
-  const targetX = -(index * itemWidth) + center;
-
-  roulette.style.transition = "none";
-  roulette.style.transform = "translateX(0)";
-
-  requestAnimationFrame(() => {
-    roulette.style.transition =
-      "transform 4.2s cubic-bezier(0.08, 0.6, 0, 1)";
-    roulette.style.transform = `translateX(${targetX}px)`;
+  roulette.style.transition="none";
+  roulette.style.transform="translateX(0)";
+  requestAnimationFrame(()=>{
+    roulette.style.transition="transform 4s cubic-bezier(.08,.6,0,1)";
+    roulette.style.transform="translateX(-2800px)";
   });
-
-  setTimeout(() => {
-    resultBox.innerHTML = `🔥 <b>${winItem.name}</b>`;
-    inventory.push(winItem);
+  setTimeout(()=>{
+    inventory.push(win);
     renderInventory();
-  }, 4300);
+    cooldownBox.textContent="";
+    cooldown=false;
+  },4200);
 };
 
-function renderInventory() {
-  inventoryBox.innerHTML = "";
-  inventory.forEach(i => {
-    const el = document.createElement("div");
-    el.className = `inventory-item ${i.rarity}`;
-    el.textContent = i.name;
-    inventoryBox.appendChild(el);
+function renderInventory(){
+  const box=document.getElementById("inventory");
+  box.innerHTML="";
+  inventory.forEach(i=>{
+    const d=document.createElement("div");
+    d.className="inventory-item";
+    d.innerHTML=`<img src="${i.img}"><small>${i.name}<br>${i.price}🪙</small>`;
+    box.appendChild(d);
   });
 }
+
+document.getElementById("coinflip").onclick=()=>{
+  if(!inventory.length) return;
+  const item=inventory.pop();
+  if(Math.random()>0.5){
+    item.price*=2;
+    inventory.push(item);
+    document.getElementById("minigame-result").textContent="Победа!";
+  }else{
+    document.getElementById("minigame-result").textContent="Проигрыш!";
+  }
+  renderInventory();
+};
+
+function updateBalance(){
+  document.getElementById("balance").textContent=balance;
+}
+
+const user=tg.initDataUnsafe?.user;
+if(user){
+  document.getElementById("username").textContent=user.username||user.first_name;
+  document.getElementById("avatar").src=user.photo_url||"assets/avatar.png";
+  document.getElementById("ref").value=`https://t.me/yourbot?start=${user.id}`;
+}  
